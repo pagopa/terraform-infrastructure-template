@@ -1,8 +1,10 @@
 terraform {
+  required_version = ">=0.15.3"
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "= 2.56.0"
+      version = "= 2.60.0"
     }
   }
 
@@ -11,7 +13,7 @@ terraform {
     hostname     = "app.terraform.io"
     organization = "PagoPa"
     workspaces {
-      prefix = "prefix_template-"
+      prefix = "prefix-"
     }
   }
 }

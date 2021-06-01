@@ -65,3 +65,13 @@ https://github.com/antonbabenko/pre-commit-terraform#how-to-install
 ```sh
 pre-commit run -a
 ```
+
+## Terraform docs
+
+Autogenerate Terraform documentation
+
+https://github.com/terraform-docs/terraform-docs#installation
+
+```sh
+terraform-docs markdown . --sort-by required > README.md
+```
