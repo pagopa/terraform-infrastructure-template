@@ -33,7 +33,7 @@ To apply changes follow the standard terraform lifecycle once the code in this r
 ```sh
 terraform.sh init [dev|uat|prod]
 
-terraform.sh plan [uat|prod]
+terraform.sh plan [dev|uat|prod]
 
 terraform.sh apply [dev|uat|prod]
 ```
