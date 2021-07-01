@@ -20,7 +20,7 @@ fi
 source "./env/$env/backend.ini"
 az account set -s "${subscription}"
 
-if echo "init plan apply refresh" | grep -w $action > /dev/null; then
+if echo "init plan apply refresh import" | grep -w $action > /dev/null; then
   if [ $action = "init" ]; then
     terraform $action -backend-config="./env/$env/backend.tfvars" $other
   else
