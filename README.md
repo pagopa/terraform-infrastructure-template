@@ -31,7 +31,7 @@ As PagoPA we build our standard Terraform modules, check available modules:
 To apply changes follow the standard terraform lifecycle once the code in this repository has been changed:
 
 ```sh
-terraform.sh init [uat|prod]
+terraform.sh init [dev|uat|prod]
 
 terraform.sh plan [uat|prod]
 
