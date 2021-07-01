@@ -35,7 +35,7 @@ terraform.sh init [dev|uat|prod]
 
 terraform.sh plan [uat|prod]
 
-terraform.sh apply [uat|prod]
+terraform.sh apply [dev|uat|prod]
 ```
 
 ## Terraform lock.hcl
