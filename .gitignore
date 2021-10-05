@@ -29,5 +29,9 @@ override.tf.json
 # example: *tfplan*
 
 *.DS_Store
-
-.bastianhost.ini
+*.log
+*.h2.db
+settings.json
+__TMP
+.metals/
+__azurite_*
