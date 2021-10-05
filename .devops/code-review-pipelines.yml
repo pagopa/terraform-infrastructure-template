@@ -1,0 +1,114 @@
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - 'src/*'
+      - '.devops/*'
+    exclude:
+      - 'src/k8s/*'
+
+parameters:
+  - name: 'DEV'
+    displayName: 'Run on DEV environment'
+    type: boolean
+    default: True
+    values:
+      - False
+      - True
+  - name: 'UAT'
+    displayName: 'Run on UAT environment'
+    type: boolean
+    default: True
+    values:
+      - False
+      - True
+  - name: 'PROD'
+    displayName: 'Run on PROD environment'
+    type: boolean
+    default: True
+    values:
+      - False
+      - True
+
+variables:
+  TIME_OUT: 5
+
+pool:
+  vmImage: 'ubuntu-20.04'
+
+resources:
+  repositories:
+    - repository: terraform
+      type: github
+      name: pagopa/azure-pipeline-templates
+      ref: refs/tags/v17
+      endpoint: 'io-azure-devops-github-ro'
+
+stages:
+  - stage: DEV
+    dependsOn: []
+    condition: and(succeeded(), eq(${{parameters.DEV}}, true))
+    pool:
+      name: product-dev-linux
+    jobs:
+      - job: terraform_install
+        steps:
+          # 1. Install terraform and terragrunt
+          - template: templates/terraform-setup/template.yaml@terraform
+      - job: terraform_plan
+        dependsOn: terraform_install
+        timeoutInMinutes: $[variables.TIME_OUT]
+        steps:
+          - checkout: self
+          # 2. Run terragrunt plan
+          - template: templates/terraform-plan/template.yaml@terraform
+            parameters:
+              SUBSCRIPTION: DEV-PRODUCT-SERVICE-CONN
+              ENVIRONMENT: dev
+              WORKINGDIR: 'src/core'
+
+  - stage: UAT
+    dependsOn: []
+    condition: and(succeeded(), eq(${{parameters.UAT}}, true))
+    pool:
+      name: product-uat-linux
+    jobs:
+      - job: terraform_install
+        steps:
+          # 1. Install terraform and terragrunt
+          - template: templates/terraform-setup/template.yaml@terraform
+      - job: terraform_plan
+        dependsOn: terraform_install
+        timeoutInMinutes: $[variables.TIME_OUT]
+        steps:
+          - checkout: self
+          # 2. Run terragrunt plan
+          - template: templates/terraform-plan/template.yaml@terraform
+            parameters:
+              SUBSCRIPTION: UAT-PRODUCT-SERVICE-CONN
+              ENVIRONMENT: uat
+              WORKINGDIR: 'src/core'
+
+  - stage: PROD
+    dependsOn: []
+    condition: and(succeeded(), eq(${{parameters.PROD}}, true))
+    pool:
+      name: product-prod-linux
+    jobs:
+      - job: terraform_install
+        steps:
+          # 1. Install terraform and terragrunt
+          - template: templates/terraform-setup/template.yaml@terraform
+      - job: terraform_plan
+        dependsOn: terraform_install
+        timeoutInMinutes: $[variables.TIME_OUT]
+        steps:
+          - checkout: self
+          # 2. Run terragrunt plan
+          - template: templates/terraform-plan/template.yaml@terraform
+            parameters:
+              SUBSCRIPTION: PROD-PRODUCT-SERVICE-CONN
+              ENVIRONMENT: prod
+              WORKINGDIR: 'src/core'
