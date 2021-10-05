@@ -1,0 +1,176 @@
+# only manual
+trigger: none
+pr: none
+
+parameters:
+  - name: 'DEV'
+    displayName: 'Run on DEV environment'
+    type: boolean
+    default: True
+    values:
+      - False
+      - True
+  - name: 'UAT'
+    displayName: 'Run on UAT environment'
+    type: boolean
+    default: True
+    values:
+      - False
+      - True
+  - name: 'PROD'
+    displayName: 'Run on PROD environment'
+    type: boolean
+    default: True
+    values:
+      - False
+      - True
+
+variables:
+  TIME_OUT: 5
+
+pool:
+  vmImage: 'ubuntu-20.04'
+
+resources:
+  repositories:
+    - repository: terraform
+      type: github
+      name: pagopa/azure-pipeline-templates
+      ref: refs/tags/v17
+      endpoint: 'io-azure-devops-github-ro'
+
+stages:
+  # DEV
+  - stage: plan_DEV
+    dependsOn: []
+    condition: and(succeeded(), eq(${{parameters.DEV}}, true))
+    pool:
+      name: product-dev-linux
+    jobs:
+      - job: plan
+        timeoutInMinutes: $[variables.TIME_OUT]
+        steps:
+          # 1. Install terraform
+          - template: templates/terraform-setup/template.yaml@terraform
+          # 2. Run terraform plan
+          - template: templates/terraform-plan/template.yaml@terraform
+            parameters:
+              SUBSCRIPTION: DEV-PRODUCT-SERVICE-CONN
+              ENVIRONMENT: dev
+              WORKINGDIR: 'src/core'
+
+  - stage: apply_DEV
+    dependsOn: [plan_DEV]
+    condition: and(succeeded(), eq(${{parameters.DEV}}, true))
+    pool:
+      name: product-dev-linux
+    jobs:
+      # - job: init
+      #   steps:
+      #     # 1. Install terraform
+      #     - template: templates/terraform-setup/template.yaml@terraform
+      - deployment: apply
+        continueOnError: false
+        # dependsOn: init
+        environment: 'DEV'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                # 3. Run terraform apply
+                - template: templates/terraform-apply/template.yaml@terraform
+                  parameters:
+                    SUBSCRIPTION: DEV-PRODUCT-SERVICE-CONN
+                    ENVIRONMENT: dev
+                    WORKINGDIR: 'src/core'
+
+  # UAT
+  - stage: plan_UAT
+    dependsOn: []
+    condition: and(succeeded(), eq(${{parameters.UAT}}, true))
+    pool:
+      name: product-uat-linux
+    jobs:
+      - job: plan
+        timeoutInMinutes: $[variables.TIME_OUT]
+        steps:
+          # 1. Install terraform
+          - template: templates/terraform-setup/template.yaml@terraform
+          # 2. Run terraform plan
+          - template: templates/terraform-plan/template.yaml@terraform
+            parameters:
+              SUBSCRIPTION: UAT-PRODUCT-SERVICE-CONN
+              ENVIRONMENT: uat
+              WORKINGDIR: 'src/core'
+
+  - stage: apply_UAT
+    dependsOn: [plan_UAT]
+    condition: and(succeeded(), eq(${{parameters.UAT}}, true))
+    pool:
+      name: product-uat-linux
+    jobs:
+      # - job: init
+      #   steps:
+      #     # 1. Install terraform
+      #     - template: templates/terraform-setup/template.yaml@terraform
+      - deployment: apply
+        continueOnError: false
+        # dependsOn: init
+        environment: 'UAT'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                # 3. Run terraform apply
+                - template: templates/terraform-apply/template.yaml@terraform
+                  parameters:
+                    SUBSCRIPTION: UAT-PRODUCT-SERVICE-CONN
+                    ENVIRONMENT: uat
+                    WORKINGDIR: 'src/core'
+
+  # PROD
+  - stage: plan_PROD
+    dependsOn: []
+    condition: and(succeeded(), eq(${{parameters.PROD}}, true))
+    pool:
+      name: product-prod-linux
+    jobs:
+      - job: plan
+        timeoutInMinutes: $[variables.TIME_OUT]
+        steps:
+          # 1. Install terraform
+          - template: templates/terraform-setup/template.yaml@terraform
+          # 2. Run terraform plan
+          - template: templates/terraform-plan/template.yaml@terraform
+            parameters:
+              SUBSCRIPTION: PROD-PRODUCT-SERVICE-CONN
+              ENVIRONMENT: prod
+              WORKINGDIR: 'src/core'
+
+  - stage: apply_PROD
+    dependsOn: [plan_PROD]
+    condition: and(succeeded(), eq(${{parameters.PROD}}, true))
+    pool:
+      name: product-prod-linux
+    jobs:
+      # - job: init
+      #   steps:
+      #     # 1. Install terraform
+      #     - template: templates/terraform-setup/template.yaml@terraform
+      - deployment: apply
+        continueOnError: false
+        # dependsOn: init
+        environment: 'PROD'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                # 3. Run terraform apply
+                - template: templates/terraform-apply/template.yaml@terraform
+                  parameters:
+                    SUBSCRIPTION: PROD-PRODUCT-SERVICE-CONN
+                    ENVIRONMENT: prod
+                    WORKINGDIR: 'src/core'
