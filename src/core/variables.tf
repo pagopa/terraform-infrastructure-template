@@ -39,6 +39,12 @@ variable "tags" {
   }
 }
 
+# network
+variable "cidr_vnet" {
+  type        = list(string)
+  description = "Virtual network address space."
+}
+
 # dns
 variable "dns_default_ttl_sec" {
   type        = number
@@ -56,4 +62,27 @@ variable "dns_zone_prefix" {
   type        = string
   default     = null
   description = "The dns subdomain."
+}
+
+# azure devops
+variable "azdo_sp_tls_cert_enabled" {
+  type        = string
+  description = "Enable Azure DevOps connection for TLS cert management"
+  default     = false
+}
+
+variable "enable_azdoa" {
+  type        = bool
+  description = "Enable Azure DevOps agent."
+}
+
+variable "cidr_subnet_azdoa" {
+  type        = list(string)
+  description = "Azure DevOps agent network address space."
+}
+
+variable "enable_iac_pipeline" {
+  type        = bool
+  description = "If true create the key vault policy to allow used by azure devops iac pipelines."
+  default     = false
 }
