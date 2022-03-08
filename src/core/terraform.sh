@@ -2,37 +2,72 @@
 
 set -e
 
-action=$1
-env=$2
+SCRIPT_PATH="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+CURRENT_DIRECTORY="$(basename "$SCRIPT_PATH")"
+ACTION=$1
+ENV=$2
 shift 2
-other=$@
+other="$*"
+# must be subscription in lower case
+subscription=""
+BACKEND_CONFIG_PATH="../.env/${ENV}/${CURRENT_DIRECTORY}_state.tfvars"
 
-if [ -z "$action" ]; then
-  echo "Missed action: init, apply, plan"
+echo "[INFO] This is the current directory: ${CURRENT_DIRECTORY}"
+
+if [ -z "$ACTION" ]; then
+  echo "[ERROR] Missed ACTION: init, apply, plan"
   exit 0
 fi
 
-if [ -z "$env" ]; then
-  echo "env should be: dev, uat or prod."
+if [ -z "$ENV" ]; then
+  echo "[ERROR] ENV should be: dev, uat or prod."
   exit 0
 fi
 
-source "./env/$env/backend.ini"
+#
+# 🏁 Source & init shell
+#
+
+# shellcheck source=/dev/null
+source "../.env/$ENV/backend.ini"
+
+# Subscription set
 az account set -s "${subscription}"
 
-if echo "init plan apply refresh import output state taint destroy" | grep -w $action > /dev/null; then
-  if [ $action = "init" ]; then
-    terraform $action -backend-config="./env/$env/backend.tfvars" $other
-  elif [ $action = "output" ] || [ $action = "state" ] || [ $action = "taint" ]; then
+# if using cygwin, we have to transcode the WORKDIR
+if [[ $WORKDIR == /cygdrive/* ]]; then
+  WORKDIR=$(cygpath -w $WORKDIR)
+fi
+
+# Helm
+export HELM_DEBUG=1
+
+#
+# 🌎 Terraform
+#
+if echo "init plan apply refresh import output state taint destroy" | grep -w "$ACTION" > /dev/null; then
+  if [ "$ACTION" = "init" ]; then
+    echo "[INFO] init tf on ENV: ${ENV}"
+    terraform "$ACTION" -backend-config="${BACKEND_CONFIG_PATH}" "$other"
+  elif [ "$ACTION" = "output" ] || [ "$ACTION" = "state" ] || [ "$ACTION" = "taint" ]; then
     # init terraform backend
-    terraform init -reconfigure -backend-config="./env/$env/backend.tfvars"
-    terraform $action $other
+    terraform init -reconfigure -backend-config="${BACKEND_CONFIG_PATH}"
+    terraform "$ACTION" "$other"
   else
     # init terraform backend
-    terraform init -reconfigure -backend-config="./env/$env/backend.tfvars"
-    terraform $action -var-file="./env/$env/terraform.tfvars" $other
+    echo "[INFO] init tf on ENV: ${ENV}"
+    terraform init \
+    -reconfigure \
+    -backend-config="${BACKEND_CONFIG_PATH}"
+
+    echo "[INFO] run tf with: ${ACTION} on ENV: ${ENV} and other: >${other}<"
+    terraform "${ACTION}" \
+    -compact-warnings \
+    -var-file="../.env/${ENV}/terraform.tfvars" \
+    -var-file="../.env/${ENV}/kubernetes.tfvars" \
+    $other
   fi
 else
-    echo "Action not allowed."
+    echo "[ERROR] ACTION not allowed."
     exit 1
 fi
