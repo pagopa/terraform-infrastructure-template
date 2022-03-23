@@ -37,7 +37,7 @@ resources:
       type: github
       name: pagopa/azure-pipeline-templates
       ref: refs/tags/v17
-      endpoint: 'io-azure-devops-github-ro'
+      endpoint: 'azure-devops-github-ro'
 
 stages:
   # DEV
