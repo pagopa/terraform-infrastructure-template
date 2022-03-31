@@ -4,7 +4,7 @@ variable "location" {
 }
 
 variable "prefix" {
-  type    = string
+  type = string
 }
 
 variable "env" {

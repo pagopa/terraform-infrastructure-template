@@ -1,7 +1,7 @@
 # general
 
 variable "prefix" {
-  type    = string
+  type = string
   validation {
     condition = (
       length(var.prefix) <= 6
