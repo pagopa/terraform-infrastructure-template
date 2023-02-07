@@ -1,0 +1,49 @@
+name: Static Analysis
+
+on:
+  push:
+
+jobs:
+  static_analysis:
+    runs-on: ubuntu-22.04
+
+    steps:
+      # from https://github.com/actions/checkout/commits/main
+      - uses: actions/checkout@1f9a0c22da41e6ebfa534300ef656657ea2c6707
+
+      - name: init_terraform_folders
+        env:
+          FOLDERS: >
+            .identity
+            src/core
+        run: |
+          pids=()
+
+          TAG=$(cat .terraform-version)
+          for f in $FOLDERS; do
+            pushd "$(pwd)/${f}"
+              rm -rf 99_main.tf
+              mv 99_main.tf.ci 99_main.tf
+              docker run -v $(pwd):/tmp -w /tmp hashicorp/terraform:$TAG init &
+              pids+=($!)
+            popd
+          done
+
+          # Wait for each specific process to terminate.
+          # Instead of this loop, a single call to 'wait' would wait for all the jobs
+          # to terminate, but it would not give us their exit status.
+          #
+          for pid in "${pids[@]}"; do
+            #
+            # Waiting on a specific PID makes the wait command return with the exit
+            # status of that process. Because of the 'set -e' setting, any exit status
+            # other than zero causes the current shell to terminate with that exit
+            # status as well.
+            #
+            wait "$pid"
+          done
+
+      - name: run_pre_commit_terraform
+        run: |
+          TAG="v1.77.0@sha256:64ce1e4b99d85497fe646db0724669039b079b45fa8cd503b4dc23dbdca490ae"
+          docker run -v $(pwd):/lint -w /lint ghcr.io/antonbabenko/pre-commit-terraform:$TAG run -a
